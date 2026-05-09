@@ -69,5 +69,5 @@ Memperbarui data metadata profil user di Supabase Auth.
   "alamat_usaha": "Jl. Merdeka No 1",
   "bio": "Menjual kue tart enak"
 }
-
+```
 © 2026 Artha API Services. Built for scaling.
