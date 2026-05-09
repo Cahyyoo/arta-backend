@@ -69,7 +69,7 @@ app.get("/", (req, res) => {
         >
           <span class="font-bold mr-2 text-slate-800">Base URL:</span>
           <code class="text-indigo-600 font-mono"
-            >http://localhost:3000/api</code
+            >https://arta-backend-nine.vercel.app/api</code
           >
         </div>
       </header>
