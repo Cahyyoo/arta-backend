@@ -237,7 +237,6 @@ app.get("/", (req, res) => {
               <li><code>type</code> : "Pemasukan" atau "Pengeluaran"</li>
               <li><code>amount</code> : Angka nominal (contoh: 150000)</li>
               <li><code>date</code> : Format YYYY-MM-DD</li>
-              <li><code>category</code> : Kategori transaksi</li>
               <li><code>description</code> : Keterangan detail</li>
               <li><code>invoiceFile</code> : (Opsional) File gambar/PDF</li>
             </ul>

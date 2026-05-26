@@ -13,7 +13,7 @@ exports.getTransactions = async (req, res) => {
 
 exports.createTransaction = async (req, res) => {
   try {
-    const { type, amount, date, category, description } = req.body;
+    const { type, amount, date, description } = req.body;
     let invoice_name = null;
     let invoice_url = null;
 
@@ -44,7 +44,6 @@ exports.createTransaction = async (req, res) => {
           type,
           amount: Number(amount),
           date,
-          category,
           description,
           invoice_name,
           invoice_url,
@@ -74,14 +73,13 @@ exports.deleteTransaction = async (req, res) => {
 exports.updateTransaction = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, amount, date, category, description } = req.body;
+    const { type, amount, date, description } = req.body;
 
     // Siapkan objek data yang akan diupdate
     let updateData = {
       type,
       amount: Number(amount),
       date,
-      category,
       description,
     };
 
