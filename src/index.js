@@ -177,7 +177,7 @@ app.get("/", (req, res) => {
                 </p>
                 </div>
                 <br/>
-                <p>Buka file konfigurasi Supabase client kamu (biasanya di src/services/api.js atau kamu bisa membuat file baru misalnya src/config/supabaseClient.js jika belum ada instance Supabase di React).
+                <p class="mb-3 text-slate-600 text-sm">Buka file konfigurasi Supabase client kamu (biasanya di src/services/api.js atau kamu bisa membuat file baru misalnya src/config/supabaseClient.js jika belum ada instance Supabase di React).
                 
                 Jika kamu memanggilnya langsung di dalam halaman Login, tambahkan fungsi ini ke tombol "Continue with Google" di file Login.jsx-mu:</p>
                 <br/>
@@ -560,7 +560,7 @@ const handleGoogleLogin = async () => {
             </p>
             
             <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-3 items-start mb-4">
-                <span class="text-blue-500 text-lg">💡</span>
+                <span class="text-blue-500 text-lg"></span>
                 <div class="text-xs text-blue-800 font-medium">
                     <strong>Catatan untuk Frontend:</strong><br/>
                     Gunakan <code class="bg-blue-100 px-1 rounded">actual_data</code> untuk menggambar garis grafik solid (data masa lalu hingga hari ini), dan <code class="bg-blue-100 px-1 rounded">ai_prediction</code> untuk menggambar garis grafik putus-putus (masa depan). Parameter <code class="bg-blue-100 px-1 rounded">insight</code> bisa langsung dicetak ke dalam UI teks "Rekomendasi Strategis AI".
