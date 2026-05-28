@@ -171,7 +171,7 @@ app.get("/", (req, res) => {
                 Login menggunakan Google <strong>tidak diproses melalui Backend Node.js</strong>. Aplikasi React langsung memanggil <code>signInWithOAuth()</code>.
             </p>
             <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-3 items-start mt-2">
-                <span class="text-amber-500 text-lg">⚠️</span>
+                <span class="text-amber-500 text-lg"></span>
                 <p class="text-xs text-amber-800 font-medium">
                     Setelah login Google berhasil, frontend harus mengekstrak token dari Supabase Session dan menyimpannya di <code>localStorage</code> agar bisa digunakan untuk mengakses endpoint Transaksi dan Profil.
                 </p>
