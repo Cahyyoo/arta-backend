@@ -441,7 +441,7 @@ const handleGoogleLogin = async () => {
 
       <section class="mb-10">
         <h2 class="text-2xl font-black text-slate-800 mb-5 flex items-center gap-2">
-          📝 7. Kuesioner Kelayakan & Prediksi AI (Protected)
+          7. Kuesioner Kelayakan & Prediksi AI (Protected)
         </h2>
 
         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-4">
@@ -644,9 +644,9 @@ const PORT = process.env.PORT || 5000;
 // if (require.main === module) {
 //   // Jalankan server hanya jika file ini di-run langsung (bukan di-import)
 //   app.listen(PORT, () => {
-//     console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-//     console.log(`📝 Dokumentasi API: http://localhost:${PORT}/`);
-//     console.log(`🔗 Base API: http://localhost:${PORT}/api`);
+//     console.log(`Server berjalan di http://localhost:${PORT}`);
+//     console.log(`Dokumentasi API: http://localhost:${PORT}/`);
+//     console.log(`Base API: http://localhost:${PORT}/api`);
 //   });
 // }
 
