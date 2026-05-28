@@ -1,18 +1,41 @@
 const supabase = require("../config/supabase");
 
-exports.getTransactions = async (req, res) => {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", req.user.id) // Hanya ambil transaksi milik user yang login
-    .order("date", { ascending: false });
+// Helper function untuk mengambil business_id
+const getBusinessId = async (userId) => {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("business_id")
+    .eq("id", userId)
+    .single();
 
-  if (error) return res.status(500).json({ message: error.message });
-  res.status(200).json(data);
+  if (error || !profile?.business_id) {
+    throw new Error("Akses ditolak: Akun Anda belum terikat dengan entitas bisnis manapun.");
+  }
+  return profile.business_id;
+};
+
+exports.getTransactions = async (req, res) => {
+  try {
+    const businessId = await getBusinessId(req.user.id);
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("business_id", businessId) // Hanya ambil transaksi milik bisnis ini
+      .order("date", { ascending: false });
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (err) {
+    // Menggunakan status 403 untuk error akses (tidak punya bisnis), 500 untuk error database
+    const status = err.message.includes("Akses ditolak") ? 403 : 500;
+    res.status(status).json({ message: err.message });
+  }
 };
 
 exports.createTransaction = async (req, res) => {
   try {
+    const businessId = await getBusinessId(req.user.id);
     const { type, amount, date, description } = req.body;
     let invoice_name = null;
     let invoice_url = null;
@@ -40,7 +63,8 @@ exports.createTransaction = async (req, res) => {
       .from("transactions")
       .insert([
         {
-          user_id: req.user.id,
+          user_id: req.user.id, // Tetap mencatat siapa karyawan/owner yang membuat data
+          business_id: businessId, // Mengikat transaksi ini ke entitas bisnis
           type,
           amount: Number(amount),
           date,
@@ -54,24 +78,33 @@ exports.createTransaction = async (req, res) => {
     if (error) throw error;
     res.status(201).json(data[0]);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const status = err.message.includes("Akses ditolak") ? 403 : 500;
+    res.status(status).json({ message: err.message });
   }
 };
 
 exports.deleteTransaction = async (req, res) => {
-  const { id } = req.params;
-  const { error } = await supabase
-    .from("transactions")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", req.user.id);
+  try {
+    const businessId = await getBusinessId(req.user.id);
+    const { id } = req.params;
 
-  if (error) return res.status(500).json({ message: error.message });
-  res.status(200).json({ message: "Transaksi berhasil dihapus" });
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", id)
+      .eq("business_id", businessId); // Memastikan transaksi yang dihapus milik bisnis ini
+
+    if (error) throw error;
+    res.status(200).json({ message: "Transaksi berhasil dihapus" });
+  } catch (err) {
+    const status = err.message.includes("Akses ditolak") ? 403 : 500;
+    res.status(status).json({ message: err.message });
+  }
 };
 
 exports.updateTransaction = async (req, res) => {
   try {
+    const businessId = await getBusinessId(req.user.id);
     const { id } = req.params;
     const { type, amount, date, description } = req.body;
 
@@ -106,7 +139,7 @@ exports.updateTransaction = async (req, res) => {
       .from("transactions")
       .update(updateData)
       .eq("id", id)
-      .eq("user_id", req.user.id) // Pastikan user hanya bisa edit transaksinya sendiri
+      .eq("business_id", businessId) // Hanya izinkan update jika transaksi milik bisnis ini
       .select();
 
     if (error) throw error;
@@ -119,6 +152,7 @@ exports.updateTransaction = async (req, res) => {
 
     res.status(200).json(data[0]);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const status = err.message.includes("Akses ditolak") ? 403 : 500;
+    res.status(status).json({ message: err.message });
   }
 };

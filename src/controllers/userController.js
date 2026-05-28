@@ -1,94 +1,182 @@
 const supabaseAdmin = require('../config/supabaseAdmin');
 
-// 1. GET: Mengambil Daftar Semua Pengguna
+// Helper function untuk mengambil business_id dari user yang sedang login (Owner/Admin peminta request)
+const getRequesterBusinessId = async (userId) => {
+    const { data: profile, error } = await supabaseAdmin
+        .from('profiles')
+        .select('business_id')
+        .eq('id', userId)
+        .single();
+
+    if (error || !profile?.business_id) {
+        throw new Error("Akses ditolak: Akun Anda belum terikat dengan entitas bisnis manapun.");
+    }
+    return profile.business_id;
+};
+
+// Helper function untuk mengecek apakah target user berada di bisnis yang sama
+const verifyUserBelongsToBusiness = async (targetUserId, businessId) => {
+    const { data: profile, error } = await supabaseAdmin
+        .from('profiles')
+        .select('business_id')
+        .eq('id', targetUserId)
+        .single();
+
+    if (error || profile?.business_id !== businessId) {
+        throw new Error("Akses ditolak: Karyawan ini tidak terdaftar di entitas bisnis Anda.");
+    }
+    return true;
+};
+
+// 1. GET: Mengambil Daftar Semua Pengguna (KHUSUS DALAM 1 BISNIS)
 exports.getUsers = async (req, res) => {
     try {
-        const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-        
-        if (error) throw error;
+        const businessId = await getRequesterBusinessId(req.user.id);
 
-        // Merapikan data untuk dikirim ke frontend
-        const formattedUsers = data.users.map(user => ({
-            id: user.id,
-            email: user.email,
-            nama: user.user_metadata?.nama || 'Tanpa Nama',
-            role: user.user_metadata?.role || 'USER',
-            status: 'Aktif',
-            created_at: user.created_at
-        }));
+        // Tahap 1: Ambil daftar ID user yang terdaftar di bisnis ini dari tabel 'profiles'
+        const { data: businessProfiles, error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('business_id', businessId);
+            
+        if (profileError) throw profileError;
+
+        // Buat array berisi kumpulan ID karyawan di bisnis ini
+        const validUserIds = businessProfiles.map(p => p.id);
+
+        // Tahap 2: Ambil semua user dari auth.users
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+        if (authError) throw authError;
+
+        // Tahap 3: Filter agar hanya mengembalikan user yang ID-nya ada di array validUserIds
+        const formattedUsers = authData.users
+            .filter(user => validUserIds.includes(user.id))
+            .map(user => ({
+                id: user.id,
+                email: user.email,
+                nama: user.user_metadata?.nama || 'Tanpa Nama',
+                role: user.user_metadata?.role || 'USER',
+                status: 'Aktif',
+                created_at: user.created_at
+            }));
 
         res.status(200).json(formattedUsers);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        const status = err.message.includes("Akses ditolak") ? 403 : 500;
+        res.status(status).json({ message: err.message });
     }
 };
 
-// 2. POST: Membuat Akun Karyawan Baru
+// 2. POST: Membuat Akun Karyawan Baru & Profile (OTOMATIS MASUK KE BISNIS OWNER)
 exports.createUser = async (req, res) => {
     try {
+        // Ambil ID Bisnis dari Owner yang sedang login
+        const businessId = await getRequesterBusinessId(req.user.id);
+        
+        // Abaikan business_id dari req.body untuk mencegah manipulasi dari frontend
         const { nama, email, role } = req.body;
-
-        // Karena di UI tidak ada input password, kita berikan password default
-        // Nantinya pengguna bisa mengubahnya melalui fitur "Lupa Password"
         const defaultPassword = "PasswordDefault123!"; 
 
-        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        // Tahap 1: Buat user di sistem autentikasi (auth.users)
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             password: defaultPassword,
-            email_confirm: true, // Langsung aktif tanpa perlu konfirmasi email
-            user_metadata: {
-                nama: nama,
-                role: role.toUpperCase() // OWNER, ADMIN, atau USER
-            }
-        });
-
-        if (error) throw error;
-
-        res.status(201).json({ 
-            message: "Akun berhasil dibuat", 
-            user: data.user 
-        });
-    } catch (err) {
-        res.status(400).json({ message: err.message });
-    }
-};
-
-// 3. PUT: Mengedit Role / Nama Karyawan
-exports.updateUser = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { nama, role } = req.body;
-
-        const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+            email_confirm: true,
             user_metadata: {
                 nama: nama,
                 role: role.toUpperCase()
             }
         });
 
-        if (error) throw error;
+        if (authError) throw authError;
 
-        res.status(200).json({ 
-            message: "Data pengguna berhasil diperbarui", 
-            user: data.user 
+        const newUserId = authData.user.id;
+
+        // Tahap 2: Buat data di tabel 'profiles' dan IKATKAN ke businessId Owner
+        const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .insert([
+                {
+                    id: newUserId,
+                    nama_lengkap: nama,
+                    onboarding_completed: false, 
+                    business_id: businessId // <-- OTOMATIS IKUT BISNIS PEMBUATNYA
+                }
+            ]);
+
+        // Rollback System: Jika gagal membuat profil
+        if (profileError) {
+            await supabaseAdmin.auth.admin.deleteUser(newUserId);
+            throw profileError;
+        }
+
+        res.status(201).json({ 
+            message: "Akun karyawan berhasil ditambahkan ke bisnis Anda", 
+            user: authData.user 
         });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        const status = err.message.includes("Akses ditolak") ? 403 : 400;
+        res.status(status).json({ message: err.message });
     }
 };
 
-// 4. DELETE: Menghapus Akun Karyawan
+// 3. PUT: Mengedit Role / Nama Karyawan (DENGAN PROTEKSI BISNIS)
+exports.updateUser = async (req, res) => {
+    try {
+        const businessId = await getRequesterBusinessId(req.user.id);
+        const { id: targetUserId } = req.params;
+        const { nama, role } = req.body;
+
+        // VERIFIKASI: Pastikan karyawan yang mau diedit ini adalah karyawan di bisnisnya sendiri
+        await verifyUserBelongsToBusiness(targetUserId, businessId);
+
+        // Tahap 1: Update metadata di auth.users
+        const { data, error: authError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+            user_metadata: {
+                nama: nama,
+                role: role.toUpperCase()
+            }
+        });
+
+        if (authError) throw authError;
+
+        // Tahap 2: Sinkronisasi update nama ke tabel 'profiles'
+        if (nama) {
+            const { error: profileError } = await supabaseAdmin
+                .from('profiles')
+                .update({ nama_lengkap: nama })
+                .eq('id', targetUserId);
+            
+            if (profileError) throw profileError;
+        }
+
+        res.status(200).json({ 
+            message: "Data karyawan berhasil diperbarui", 
+            user: data.user 
+        });
+    } catch (err) {
+        const status = err.message.includes("Akses ditolak") ? 403 : 400;
+        res.status(status).json({ message: err.message });
+    }
+};
+
+// 4. DELETE: Menghapus Akun Karyawan (DENGAN PROTEKSI BISNIS)
 exports.deleteUser = async (req, res) => {
     try {
-        const { id } = req.params;
+        const businessId = await getRequesterBusinessId(req.user.id);
+        const { id: targetUserId } = req.params;
 
-        // Hapus pengguna secara permanen dari auth.users
-        const { data, error } = await supabaseAdmin.auth.admin.deleteUser(id);
+        // VERIFIKASI: Jangan sampai Owner A menghapus karyawan Owner B dengan menebak UUID
+        await verifyUserBelongsToBusiness(targetUserId, businessId);
+
+        // Hapus Karyawan
+        const { data, error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
 
         if (error) throw error;
 
-        res.status(200).json({ message: "Pengguna berhasil dihapus" });
+        res.status(200).json({ message: "Karyawan berhasil dihapus dari sistem." });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        const status = err.message.includes("Akses ditolak") ? 403 : 400;
+        res.status(status).json({ message: err.message });
     }
 };
