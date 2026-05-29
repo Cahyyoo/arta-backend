@@ -7,9 +7,17 @@ const apiRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-// Middlewares Global
-app.use(cors()); // Mengizinkan akses dari frontend
-app.use(express.json()); // Membaca body JSON
+// CORS agar bisa diakses dari luar host
+app.use(
+  cors({
+    origin: "*", // izinkan semua domain
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Middlewares
+app.use(express.json());
 
 // Daftarkan semua routes API ke prefix /api
 app.use("/api", apiRoutes);
