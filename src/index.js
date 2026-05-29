@@ -21,7 +21,7 @@ app.use(express.json());
 
 // Daftarkan semua routes API ke prefix /api
 app.use("/api", apiRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api", authRoutes);
 
 // Jika ada yang mengakses root URL (/), arahkan ke file index.html
 app.get("/", (req, res) => {
