@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const apiRoutes = require("./routes/apiRoutes");
+const apiRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -641,14 +642,14 @@ const handleGoogleLogin = async () => {
 
 const PORT = process.env.PORT || 5000;
 
-// if (require.main === module) {
-//   // Jalankan server hanya jika file ini di-run langsung (bukan di-import)
-//   app.listen(PORT, () => {
-//     console.log(`Server berjalan di http://localhost:${PORT}`);
-//     console.log(`Dokumentasi API: http://localhost:${PORT}/`);
-//     console.log(`Base API: http://localhost:${PORT}/api`);
-//   });
-// }
+if (require.main === module) {
+  // Jalankan server hanya jika file ini di-run langsung (bukan di-import)
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log(`Dokumentasi API: http://localhost:${PORT}/`);
+    console.log(`Base API: http://localhost:${PORT}/api`);
+  });
+}
 
 // Menjalankan Server
 module.exports = app;
