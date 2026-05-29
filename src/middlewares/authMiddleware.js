@@ -14,37 +14,41 @@ const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    // 1. Cek header Authorization
+    console.log("AUTH HEADER:", authHeader);
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         status: "error",
-        message: "Akses ditolak. Token tidak ditemukan.",
+        message: "Token tidak ditemukan",
       });
     }
 
     const token = authHeader.split(" ")[1];
 
-    // 2. Verifikasi JWT menggunakan Supabase
+    console.log("TOKEN:", token.substring(0, 30));
+
     const { data, error } = await supabase.auth.getUser(token);
+
+    console.log("GET USER RESULT:", data);
+    console.log("GET USER ERROR:", error);
 
     if (error || !data.user) {
       return res.status(401).json({
         status: "error",
-        message: "Token tidak valid atau sudah expired.",
+        message: "Token invalid",
       });
     }
 
-    // 3. Set req.user untuk digunakan di controller
     req.user = data.user;
-    req.token = token;
 
-    // 4. Lanjut ke handler berikutnya
     next();
-  } catch (error) {
-    console.error("❌ Auth Middleware Error:", error.message);
+
+  } catch (err) {
+    console.error(err);
+
     return res.status(401).json({
       status: "error",
-      message: "Gagal memvalidasi token autentikasi.",
+      message: err.message,
     });
   }
 };
