@@ -11,7 +11,7 @@ const app = express();
 app.use(
   cors({
     origin: "*", // izinkan semua domain
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -21,6 +21,7 @@ app.use(express.json());
 
 // Daftarkan semua routes API ke prefix /api
 app.use("/api", apiRoutes);
+app.use("/api/auth", authRoutes);
 
 // Jika ada yang mengakses root URL (/), arahkan ke file index.html
 app.get("/", (req, res) => {
