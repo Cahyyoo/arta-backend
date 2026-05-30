@@ -65,13 +65,37 @@ const updateOnboarding = async (req, res) => {
       updated_at: new Date().toISOString(),
     };
 
-    // Jika umkm_aktif, simpan juga data bisnis
+    // Jika umkm_aktif, simpan data ke tabel business dan siapkan data profil
     if (user_type === "umkm_aktif") {
-      if (nama_usaha) updateData.nama_usaha = nama_usaha;
+      // Validasi karena kolom 'name' di tabel business bertipe NON-NULLABLE
+      if (!nama_usaha) {
+        return res.status(400).json({
+          status: "error",
+          message: "Nama usaha wajib diisi untuk tipe akun UMKM Aktif.",
+        });
+      }
+
+      // 1. Buat data baru di tabel 'business'
+      const { data: newBusiness, error: businessError } = await supabase
+        .from("businesses")
+        .insert({
+          name: nama_usaha,
+          type: tipe_usaha || null,
+          owner_id: userId,
+        })
+        .select("id")
+        .single();
+
+      if (businessError) throw businessError;
+
+      // 2. Pertahankan kode asli update profil Anda & sisipkan business_id
+      updateData.nama_usaha = nama_usaha;
       if (tipe_usaha) updateData.tipe_usaha = tipe_usaha;
       if (lama_usaha) updateData.lama_usaha = lama_usaha;
+      updateData.business_id = newBusiness.id; // Menyisipkan relasi ID Business baru
     }
 
+    // 3. Update tabel 'profiles'
     const { data, error } = await supabase
       .from("profiles")
       .update(updateData)

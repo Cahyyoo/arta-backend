@@ -20,7 +20,7 @@ router.get("/health", (req, res) => {
 // --- TRANSACTIONS (Dilindungi authMiddleware) ---
 router.get("/transactions", authMiddleware, transactionController.getTransactions);
 router.post(
-  "/transactions",
+  "/transactions",authMiddleware,
   uploadMiddleware.single("invoiceFile"),
   transactionController.createTransaction,
 );

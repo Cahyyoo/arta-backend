@@ -245,6 +245,7 @@ const handleGoogleLogin = async () => {
               <li><code>type</code> : "Pemasukan" atau "Pengeluaran"</li>
               <li><code>amount</code> : Angka nominal (contoh: 150000)</li>
               <li><code>date</code> : Format YYYY-MM-DD</li>
+              <li><code>category</code> : Kateorin</li>
               <li><code>description</code> : Keterangan detail</li>
               <li><code>invoiceFile</code> : (Opsional) File gambar/PDF</li>
             </ul>
@@ -651,14 +652,14 @@ const handleGoogleLogin = async () => {
 
 const PORT = process.env.PORT || 5000;
 
-// if (require.main === module) {
-//   // Jalankan server hanya jika file ini di-run langsung (bukan di-import)
-//   app.listen(PORT, () => {
-//     console.log(`Server berjalan di http://localhost:${PORT}`);
-//     console.log(`Dokumentasi API: http://localhost:${PORT}/`);
-//     console.log(`Base API: http://localhost:${PORT}/api`);
-//   });
-// }
+if (require.main === module) {
+  // Jalankan server hanya jika file ini di-run langsung (bukan di-import)
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log(`Dokumentasi API: http://localhost:${PORT}/`);
+    console.log(`Base API: http://localhost:${PORT}/api`);
+  });
+}
 
 // Menjalankan Server
 module.exports = app;

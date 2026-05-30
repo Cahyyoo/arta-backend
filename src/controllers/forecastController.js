@@ -1,5 +1,5 @@
-const supabase = require('../config/supabase');
-const axios = require('axios');
+const supabase = require('../config/supabase'); 
+const axios = require('axios'); // Pastikan axios sudah di-import di atas file
 
 exports.getForecast = async (req, res) => {
     try {
@@ -18,8 +18,9 @@ exports.getForecast = async (req, res) => {
         const businessId = profile.business_id;
 
         // 2. Dapatkan Detail Bisnis
+        // Catatan: Pastikan nama tabel Anda sesuai ('businesses' atau 'business')
         const { data: business, error: businessError } = await supabase
-            .from('businesses')
+            .from('businesses') 
             .select('name, industry')
             .eq('id', businessId)
             .single();
@@ -27,7 +28,11 @@ exports.getForecast = async (req, res) => {
         if (businessError) throw businessError;
 
         const sector = business.industry ? business.industry.toLowerCase().replace(/\s+/g, '_') : 'default';
-        const companyId = business.name || `Business_${businessId}`;
+        
+        // 🔥 PERBAIKAN: Format company_id agar spasi diganti dengan underscore sesuai kebutuhan model ML
+        const companyId = business.name 
+            ? business.name.trim().replace(/\s+/g, '_') 
+            : `Business_${businessId}`;
 
         // 3. Kumpulkan Transaksi 30 Hari Terakhir
         const today = new Date();
@@ -48,7 +53,7 @@ exports.getForecast = async (req, res) => {
 
         // 4. Agregasi Harian (30 hari berurutan)
         const historical_data = [];
-        let totalNetTerakhir = 0; // Untuk hitung rata-rata aktual
+        let totalNetTerakhir = 0; 
 
         for (let i = 29; i >= 0; i--) {
             const d = new Date();
@@ -57,24 +62,32 @@ exports.getForecast = async (req, res) => {
 
             const dailyTx = transactions.filter(t => t.date.startsWith(dateStr));
             
-            const income = dailyTx.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + Number(t.amount), 0);
-            const expense = dailyTx.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + Number(t.amount), 0);
+            // Menggunakan Math.round untuk memastikan output data adalah nomor bulat (integer) bersih
+            const income = Math.round(dailyTx.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + Number(t.amount), 0));
+            const expense = Math.round(dailyTx.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + Number(t.amount), 0));
             const net = income - expense;
 
-            historical_data.push({ date: dateStr, income, expense, net });
+            historical_data.push({ 
+                date: dateStr, 
+                income: income, 
+                expense: expense, 
+                net: net 
+            });
             
-            if (i < 7) totalNetTerakhir += net; // Ambil total net 7 hari terakhir
+            if (i < 7) totalNetTerakhir += net; 
         }
 
         const rataRataAktual = totalNetTerakhir / 7;
 
         // 5. Kirim Payload ke ML API (FastAPI)
-        const mlPayload = { company_id: companyId, historical_data: historical_data };
-        const mlApiUrl = process.env.ML_API_URL || 'http://localhost:8000';
+        const mlPayload = { 
+            company_id: companyId, 
+            historical_data: historical_data 
+        };
         
         let mlResponse;
         try {
-            const response = await axios.post(`${mlApiUrl}/forecast/${sector}`, mlPayload);
+            const response = await axios.post(`https://web-production-eaf78.up.railway.app/forecast/${sector}`, mlPayload);
             mlResponse = response.data;
         } catch (mlError) {
             console.error("ML API Error:", mlError.response?.data || mlError.message);
@@ -92,8 +105,8 @@ exports.getForecast = async (req, res) => {
             const totalPrediksi = predictions.reduce((sum, item) => sum + item.predicted_net_cashflow, 0);
             const rataRataPrediksi = totalPrediksi / predictions.length;
 
-            const batasLonjakan = rataRataAktual * 1.1; // Naik 10%
-            const batasPenurunan = rataRataAktual * 0.9; // Turun 10%
+            const batasLonjakan = rataRataAktual * 1.1; 
+            const batasPenurunan = rataRataAktual * 0.9; 
 
             const tanggalAkhirPrediksi = new Date(predictions[predictions.length - 1].date);
             const formatTanggal = tanggalAkhirPrediksi.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
@@ -106,15 +119,14 @@ exports.getForecast = async (req, res) => {
         }
 
         // 7. Format Ulang Data Gabungan Untuk Frontend Chart
-        // Frontend akan menyambungkan historical_data dan ai_prediction di grafik
         res.status(200).json({
             status: "success",
-            method_used: mlResponse.data.method_used, // Menampilkan info apakah pakai LSTM atau Fallback
+            method_used: mlResponse.data.method_used, 
             actual_data: historical_data.map(item => ({
                 date: item.date,
                 net_cashflow: item.net
             })),
-            ai_prediction: predictions, // Berisi array format: { date: "...", predicted_net_cashflow: 1300000 }
+            ai_prediction: predictions, 
             insight: aiInsight
         });
 
