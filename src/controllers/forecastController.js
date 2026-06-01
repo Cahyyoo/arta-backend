@@ -29,7 +29,7 @@ exports.getForecast = async (req, res) => {
 
         const sector = business.industry ? business.industry.toLowerCase().replace(/\s+/g, '_') : 'default';
         
-        // 🔥 PERBAIKAN: Format company_id agar spasi diganti dengan underscore sesuai kebutuhan model ML
+        // PERBAIKAN: Format company_id agar spasi diganti dengan underscore sesuai kebutuhan model ML
         const companyId = business.name 
             ? business.name.trim().replace(/\s+/g, '_') 
             : `Business_${businessId}`;
@@ -55,23 +55,32 @@ exports.getForecast = async (req, res) => {
         const historical_data = [];
         let totalNetTerakhir = 0; 
 
+        // Gunakan baseDate agar terhindar dari bug zona waktu saat ganti bulan/hari
+        const todays = new Date();
+        const baseDate = new Date(todays.getFullYear(), todays.getMonth(), todays.getDate());
+
         for (let i = 29; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(today.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const targetDate = new Date(baseDate);
+            targetDate.setDate(baseDate.getDate() - i);
+            
+            // Format manual YYYY-MM-DD
+            const year = targetDate.getFullYear();
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const day = String(targetDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
 
             const dailyTx = transactions.filter(t => t.date.startsWith(dateStr));
             
-            // Menggunakan Math.round untuk memastikan output data adalah nomor bulat (integer) bersih
             const income = Math.round(dailyTx.filter(t => t.type === 'Pemasukan').reduce((sum, t) => sum + Number(t.amount), 0));
             const expense = Math.round(dailyTx.filter(t => t.type === 'Pengeluaran').reduce((sum, t) => sum + Number(t.amount), 0));
             const net = income - expense;
 
-            historical_data.push({ 
-                date: dateStr, 
-                income: income, 
-                expense: expense, 
-                net: net 
+            // Memasukkan data ke dalam array dalam bentuk objek persis seperti contoh Anda
+            historical_data.push({
+                "date": dateStr,
+                "income": income,
+                "expense": expense,
+                "net": net
             });
             
             if (i < 7) totalNetTerakhir += net; 
@@ -80,14 +89,223 @@ exports.getForecast = async (req, res) => {
         const rataRataAktual = totalNetTerakhir / 7;
 
         // 5. Kirim Payload ke ML API (FastAPI)
-        const mlPayload = { 
-            company_id: companyId, 
-            historical_data: historical_data 
-        };
+        // const mlPayload = { 
+        //     company_id: companyId, 
+        //     historical_data: historical_data 
+        // };
+
+        const mlPayload = {
+            "company_id": companyId,
+            "historical_data": 
+            // [
+            //     {
+            //     "date": "2026-05-01",
+            //     "income": 2500000,
+            //     "expense": 1200000,
+            //     "net": 1300000
+            //     },
+            //     {
+            //     "date": "2026-05-02",
+            //     "income": 3500000,
+            //     "expense": 1200000,
+            //     "net": 2300000
+            //     }
+            // ]
+
+            // [
+            //     {
+            //         "date": "2026-05-03",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-04",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-05",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-06",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-07",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-08",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-09",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-10",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-11",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-12",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-13",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-14",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-15",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-16",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-17",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-18",
+            //         "income": 100000,
+            //         "expense": 20000,
+            //         "net": 80000
+            //     },
+            //     {
+            //         "date": "2026-05-19",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-20",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-21",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-22",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-23",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-24",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-25",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-26",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-27",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-28",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-29",
+            //         "income": 0,
+            //         "expense": 0,
+            //         "net": 0
+            //     },
+            //     {
+            //         "date": "2026-05-30",
+            //         "income": 20000000,
+            //         "expense": 5000000,
+            //         "net": 15000000
+            //     },
+            //     {
+            //         "date": "2026-05-31",
+            //         "income": 250000,
+            //         "expense": 50000,
+            //         "net": 200000
+            //     },
+            //     {
+            //         "date": "2026-06-01",
+            //         "income": 100000,
+            //         "expense": 0,
+            //         "net": 100000
+            //     },
+            //     ]
+
+            historical_data
+            }
+
+            console.log(JSON.stringify(mlPayload.historical_data, null, 2));
+
         
         let mlResponse;
         try {
+
             const response = await axios.post(`https://web-production-eaf78.up.railway.app/forecast/${sector}`, mlPayload);
+            console.log("ini adalah isi mlPayload" + mlPayload);
             mlResponse = response.data;
         } catch (mlError) {
             console.error("ML API Error:", mlError.response?.data || mlError.message);

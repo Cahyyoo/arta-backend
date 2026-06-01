@@ -78,6 +78,7 @@ exports.createUser = async (req, res) => {
         const defaultPassword = "PasswordDefault123!"; 
 
         // Tahap 1: Buat user di sistem autentikasi (auth.users)
+        // Saat ini berhasil, trigger di Supabase Anda otomatis membuat row di tabel 'profiles'
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             password: defaultPassword,
@@ -92,19 +93,18 @@ exports.createUser = async (req, res) => {
 
         const newUserId = authData.user.id;
 
-        // Tahap 2: Buat data di tabel 'profiles' dan IKATKAN ke businessId Owner
+        // Tahap 2: PERBAIKAN - Gunakan .update() bukan .insert() untuk menghindari duplicate key error
+        // Kita memperbarui data profil yang sudah otomatis di-generate oleh DB Trigger
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
-            .insert([
-                {
-                    id: newUserId,
-                    nama_lengkap: nama,
-                    onboarding_completed: false, 
-                    business_id: businessId // <-- OTOMATIS IKUT BISNIS PEMBUATNYA
-                }
-            ]);
+            .update({
+                nama_lengkap: nama,
+                onboarding_completed: false, 
+                business_id: businessId // <-- OTOMATIS IKUT BISNIS PEMBUATNYA
+            })
+            .eq('id', newUserId); // Pastikan update hanya target user_id baru ini
 
-        // Rollback System: Jika gagal membuat profil
+        // Rollback System: Jika gagal memperbarui profil, hapus user dari auth demi konsistensi data
         if (profileError) {
             await supabaseAdmin.auth.admin.deleteUser(newUserId);
             throw profileError;

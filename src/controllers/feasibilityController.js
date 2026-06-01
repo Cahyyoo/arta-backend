@@ -86,8 +86,8 @@ exports.submitQuestionnaire = async (req, res) => {
         let aiPrediction = null;
         try {
             // Sesuaikan URL ini dengan endpoint API ML prediksi kelayakanmu
-            const mlApiUrl = "https://klasifikasi-bisnis-production-746c.up.railway.app";
-            const aiResponse = await axios.post(`${mlApiUrl}/predict_with_insight`, mlPayload);
+            const mlApiUrl = "https://api-prediksi-sukses-bisnis-production.up.railway.app";
+            const aiResponse = await axios.post(`${mlApiUrl}/predict`, mlPayload);
             aiPrediction = aiResponse.data;
         } catch (mlError) {
             console.error("Gagal menghubungi Model AI Kelayakan:", mlError.message);
