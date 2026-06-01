@@ -86,7 +86,6 @@ exports.createUser = async (req, res) => {
                 name: nama,
                 role: role.toUpperCase()
             },
-            role: role
         });
 
         if (authError) throw authError;
