@@ -20,6 +20,7 @@ const register = async (req, res) => {
       options: {
         data: {
           nama_lengkap: nama,
+          role: "OWNER"
         },
       },
     });

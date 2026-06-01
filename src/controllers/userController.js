@@ -74,19 +74,19 @@ exports.createUser = async (req, res) => {
         const businessId = await getRequesterBusinessId(req.user.id);
         
         // Abaikan business_id dari req.body untuk mencegah manipulasi dari frontend
-        const { nama, email, role } = req.body;
-        const defaultPassword = "PasswordDefault123!"; 
+        const { nama, email, role, password } = req.body;
 
         // Tahap 1: Buat user di sistem autentikasi (auth.users)
         // Saat ini berhasil, trigger di Supabase Anda otomatis membuat row di tabel 'profiles'
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
-            password: defaultPassword,
+            password: password,
             email_confirm: true,
             user_metadata: {
                 name: nama,
                 role: role.toUpperCase()
-            }
+            },
+            role: role
         });
 
         if (authError) throw authError;

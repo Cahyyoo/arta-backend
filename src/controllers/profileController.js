@@ -131,6 +131,19 @@ const upgradeToUmkm = async (req, res) => {
       });
     }
 
+    // 1. Buat data baru di tabel 'business'
+      const { data: newBusiness, error: businessError } = await supabase
+        .from("businesses")
+        .insert({
+          name: nama_usaha,
+          type: tipe_usaha || null,
+          owner_id: userId,
+        })
+        .select("id")
+        .single();
+
+      if (businessError) throw businessError;
+
     const { data, error } = await supabase
       .from("profiles")
       .update({
@@ -138,6 +151,7 @@ const upgradeToUmkm = async (req, res) => {
         nama_usaha,
         tipe_usaha,
         lama_usaha,
+        business_id: newBusiness.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId)
