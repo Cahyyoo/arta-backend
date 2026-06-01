@@ -84,7 +84,7 @@ exports.createUser = async (req, res) => {
             password: defaultPassword,
             email_confirm: true,
             user_metadata: {
-                nama: nama,
+                name: nama,
                 role: role.toUpperCase()
             }
         });
