@@ -54,7 +54,7 @@ exports.getUsers = async (req, res) => {
             .map(user => ({
                 id: user.id,
                 email: user.email,
-                nama: user.user_metadata?.name || 'Tanpa Nama',
+                name: user.user_metadata?.name || 'Tanpa Nama',
                 role: user.user_metadata?.role || 'USER',
                 status: 'Aktif',
                 created_at: user.created_at
@@ -74,7 +74,7 @@ exports.createUser = async (req, res) => {
         const businessId = await getRequesterBusinessId(req.user.id);
         
         // Abaikan business_id dari req.body untuk mencegah manipulasi dari frontend
-        const { nama, email, role, password } = req.body;
+        const { name, email, role, password } = req.body;
 
         // Tahap 1: Buat user di sistem autentikasi (auth.users)
         // Saat ini berhasil, trigger di Supabase Anda otomatis membuat row di tabel 'profiles'
@@ -83,7 +83,7 @@ exports.createUser = async (req, res) => {
             password: password,
             email_confirm: true,
             user_metadata: {
-                name: nama,
+                name: name,
                 role: role.toUpperCase()
             },
         });
@@ -97,7 +97,7 @@ exports.createUser = async (req, res) => {
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .update({
-                nama_lengkap: nama,
+                nama_lengkap: name,
                 onboarding_completed: false, 
                 business_id: businessId // <-- OTOMATIS IKUT BISNIS PEMBUATNYA
             })
@@ -124,7 +124,7 @@ exports.updateUser = async (req, res) => {
     try {
         const businessId = await getRequesterBusinessId(req.user.id);
         const { id: targetUserId } = req.params;
-        const { nama, role } = req.body;
+        const { name, role } = req.body;
 
         // VERIFIKASI: Pastikan karyawan yang mau diedit ini adalah karyawan di bisnisnya sendiri
         await verifyUserBelongsToBusiness(targetUserId, businessId);
@@ -132,7 +132,7 @@ exports.updateUser = async (req, res) => {
         // Tahap 1: Update metadata di auth.users
         const { data, error: authError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
             user_metadata: {
-                nama: nama,
+                name: name,
                 role: role.toUpperCase()
             }
         });
@@ -140,10 +140,10 @@ exports.updateUser = async (req, res) => {
         if (authError) throw authError;
 
         // Tahap 2: Sinkronisasi update nama ke tabel 'profiles'
-        if (nama) {
+        if (name) {
             const { error: profileError } = await supabaseAdmin
                 .from('profiles')
-                .update({ nama_lengkap: nama })
+                .update({ nama_lengkap: name })
                 .eq('id', targetUserId);
             
             if (profileError) throw profileError;
