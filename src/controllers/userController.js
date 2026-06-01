@@ -54,7 +54,7 @@ exports.getUsers = async (req, res) => {
             .map(user => ({
                 id: user.id,
                 email: user.email,
-                nama: user.user_metadata?.nama || 'Tanpa Nama',
+                nama: user.user_metadata?.name || 'Tanpa Nama',
                 role: user.user_metadata?.role || 'USER',
                 status: 'Aktif',
                 created_at: user.created_at
