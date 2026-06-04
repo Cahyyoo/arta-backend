@@ -1,6 +1,6 @@
 const supabase = require("../config/supabase");
 
-// --- REGISTRASI USER BARU ---
+// Registrasi User Baru
 const register = async (req, res) => {
   try {
     const { email, password, nama } = req.body;
@@ -45,12 +45,12 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Register Error:", error.message);
+    console.error("Register Error:", error.message);
     res.status(400).json({ status: "error", message: error.message });
   }
 };
 
-// --- VERIFIKASI OTP ---
+// Verifikasi OTP
 const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -88,7 +88,7 @@ const verifyOtp = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Verify OTP Error:", error.message);
+    console.error("Verify OTP Error:", error.message);
 
     let message = "Kode OTP tidak valid atau sudah expired.";
     if (error.message?.includes("Token has expired")) {
@@ -99,7 +99,7 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-// --- KIRIM ULANG OTP ---
+// Kirim Ulang OTP
 const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -123,7 +123,7 @@ const resendOtp = async (req, res) => {
       message: "Kode OTP baru telah dikirim ke email Anda.",
     });
   } catch (error) {
-    console.error("❌ Resend OTP Error:", error.message);
+    console.error("Resend OTP Error:", error.message);
 
     let message = "Gagal mengirim ulang kode OTP.";
     if (error.message?.includes("rate")) {
@@ -134,7 +134,7 @@ const resendOtp = async (req, res) => {
   }
 };
 
-// --- REFRESH TOKEN ---
+// Refresh Token
 const refreshToken = async (req, res) => {
   try {
     const { refreshToken: token } = req.body;
@@ -169,7 +169,7 @@ const refreshToken = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Refresh Token Error:", error.message);
+    console.error("Refresh Token Error:", error.message);
     res.status(401).json({
       status: "error",
       message: "Refresh token tidak valid atau sudah expired. Silakan login ulang.",
@@ -177,7 +177,7 @@ const refreshToken = async (req, res) => {
   }
 };
 
-// --- LOGIN USER ---
+// Login User
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -226,7 +226,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Login Error:", error.message || error);
+    console.error("Login Error:", error.message || error);
     
     let message = "Email atau password salah";
     if (error.message === "Email not confirmed") {

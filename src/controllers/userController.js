@@ -54,7 +54,7 @@ exports.getUsers = async (req, res) => {
             .map(user => ({
                 id: user.id,
                 email: user.email,
-                name: user.user_metadata?.name || 'Tanpa Nama',
+                name: user.user_metadata?.name || req.user.user_metadata.nama_lengkap || 'Tanpa Nama',
                 role: user.user_metadata?.role || 'USER',
                 status: 'Aktif',
                 created_at: user.created_at
@@ -86,6 +86,7 @@ exports.createUser = async (req, res) => {
                 name: name,
                 role: role.toUpperCase()
             },
+            role: role.toUpperCase()
         });
 
         if (authError) throw authError;
@@ -99,7 +100,7 @@ exports.createUser = async (req, res) => {
             .update({
                 nama_lengkap: name,
                 onboarding_completed: false, 
-                business_id: businessId // <-- OTOMATIS IKUT BISNIS PEMBUATNYA
+                business_id: businessId
             })
             .eq('id', newUserId); // Pastikan update hanya target user_id baru ini
 

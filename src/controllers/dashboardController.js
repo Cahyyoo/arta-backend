@@ -4,7 +4,7 @@ exports.getOverview = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // --- 1. IDENTIFIKASI BISNIS (ISOLASI DATA) ---
+        // 1. IDENTIFIKASI BISNIS (ISOLASI DATA) ---
         // Mencari tahu bisnis mana yang dimiliki/dikelola oleh user yang sedang login
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
